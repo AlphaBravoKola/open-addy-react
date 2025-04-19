@@ -43,26 +43,30 @@ export const Sidebar = () => {
   if (!user) return null;
 
   return (
-    <div className="w-64 bg-white shadow-sm border-r border-gray-200 hidden md:block">
-      <nav className="p-4">
-        <ul className="space-y-2">
-          {navigation.map((item) => (
-            <li key={item.name}>
-              <Link
-                to={item.href}
-                className={`flex items-center px-4 py-3 ${
-                  location.pathname === item.href
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                } rounded-md`}
-              >
-                {item.icon}
-                <span className="font-medium">{item.name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <div className="w-64 bg-white shadow-lg border-r border-gray-200 hidden md:block">
+      <div className="h-full flex flex-col">
+        <div className="flex-1">
+          <nav className="px-4 py-6">
+            <ul className="space-y-1">
+              {navigation.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    to={item.href}
+                    className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 ${
+                      location.pathname === item.href
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </div>
     </div>
   );
 }; 
