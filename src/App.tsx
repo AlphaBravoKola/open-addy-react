@@ -4,6 +4,9 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
+import PackageClaims from './pages/PackageClaims';
+import Notify from './pages/Notify';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -24,14 +27,12 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { user } = useAuth();
-
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Landing />} />
-          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"
             element={
@@ -40,7 +41,31 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
+          <Route
+            path="/package-claims"
+            element={
+              <PrivateRoute>
+                <PackageClaims />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/notify"
+            element={
+              <PrivateRoute>
+                <Notify />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <Settings />
+              </PrivateRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>
