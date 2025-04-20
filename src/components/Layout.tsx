@@ -98,14 +98,7 @@ export default function Layout({ children }: LayoutProps) {
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
-          <div className="flex flex-1 justify-between px-4">
-            <div className="flex flex-1"></div>
-            <div className="ml-4 flex items-center md:ml-6">
-              {/* Profile dropdown can be added here */}
-            </div>
-          </div>
         </div>
-
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {children}
