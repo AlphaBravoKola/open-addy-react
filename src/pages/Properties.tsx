@@ -34,7 +34,7 @@ export default function Properties() {
         authorizedServices: Array.isArray(property.authorized_services) ? property.authorized_services : [],
         accessInformation: {
           code: property.access_code || '',
-          additionalInfo: property.access_additional_info || ''
+          additionalInfo: property.access_info || ''
         },
         created_at: property.created_at,
         updated_at: property.updated_at
@@ -84,7 +84,7 @@ export default function Properties() {
         property_updates: propertyData.propertyUpdates,
         authorized_services: propertyData.authorizedServices,
         access_code: propertyData.accessInformation.code,
-        access_additional_info: propertyData.accessInformation.additionalInfo
+        access_info: propertyData.accessInformation.additionalInfo
       };
 
       if (selectedProperty) {
@@ -124,7 +124,7 @@ export default function Properties() {
             authorizedServices: Array.isArray(data[0].authorized_services) ? data[0].authorized_services : [],
             accessInformation: {
               code: data[0].access_code || '',
-              additionalInfo: data[0].access_additional_info || ''
+              additionalInfo: data[0].access_info || ''
             },
             created_at: data[0].created_at,
             updated_at: data[0].updated_at
