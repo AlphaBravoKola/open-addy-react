@@ -1,24 +1,75 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Packages from './pages/Packages';
-import Tenants from './pages/Tenants';
-import Properties from './pages/Properties';
+import PackageClaims from './pages/PackageClaims';
+import Notify from './pages/Notify';
 import Settings from './pages/Settings';
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
+}
 
 function App() {
   return (
-    <Router>
-      <Layout>
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/packages" element={<Packages />} />
-          <Route path="/tenants" element={<Tenants />} />
-          <Route path="/properties" element={<Properties />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/package-claims"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <PackageClaims />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/notify"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <Notify />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <Settings />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
         </Routes>
-      </Layout>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 
