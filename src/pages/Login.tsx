@@ -22,7 +22,7 @@ export default function Login() {
 
       if (error) throw error;
       
-      if (data?.user) {
+      if (data?.session) {
         navigate('/');
       }
     } catch (error: any) {
