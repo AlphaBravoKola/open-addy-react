@@ -3,9 +3,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import PackageClaims from './pages/PackageClaims';
-import Notify from './pages/Notify';
-import Settings from './pages/Settings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -33,36 +30,6 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <Dashboard />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/package-claims"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <PackageClaims />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/notify"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Notify />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Settings />
                 </Layout>
               </PrivateRoute>
             }
