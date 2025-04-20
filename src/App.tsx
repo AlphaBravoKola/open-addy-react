@@ -1,26 +1,25 @@
-import { Routes, Route } from 'react-router-dom'
-import Navbar from './components/Navbar'
-import Footer from './components/Footer'
-import Home from './pages/Home'
-import About from './pages/About'
-import Contact from './pages/Contact'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Packages from './pages/Packages';
+import Tenants from './pages/Tenants';
+import Properties from './pages/Properties';
+import Settings from './pages/Settings';
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-grow">
+    <Router>
+      <Layout>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/packages" element={<Packages />} />
+          <Route path="/tenants" element={<Tenants />} />
+          <Route path="/properties" element={<Properties />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
-      </main>
-
-      <Footer />
-    </div>
-  )
+      </Layout>
+    </Router>
+  );
 }
 
-export default App
+export default App; 
