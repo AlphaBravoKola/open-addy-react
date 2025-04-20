@@ -23,7 +23,18 @@ export default function Properties() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProperties(data || []);
+      
+      // Ensure authorizedServices is always an array
+      const formattedData = (data || []).map(property => ({
+        ...property,
+        authorizedServices: property.authorizedServices || [],
+        accessInformation: {
+          code: property.accessInformation?.code || '',
+          additionalInfo: property.accessInformation?.additionalInfo || ''
+        }
+      }));
+      
+      setProperties(formattedData);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -63,21 +74,45 @@ export default function Properties() {
         // Update existing property
         const { error } = await supabase
           .from('properties')
-          .update(propertyData)
+          .update({
+            ...propertyData,
+            authorizedServices: propertyData.authorizedServices || [],
+            accessInformation: {
+              code: propertyData.accessInformation?.code || '',
+              additionalInfo: propertyData.accessInformation?.additionalInfo || ''
+            }
+          })
           .eq('id', selectedProperty.id);
 
         if (error) throw error;
 
         setProperties(properties.map(p => 
           p.id === selectedProperty.id 
-            ? { ...propertyData, id: p.id, created_at: p.created_at, updated_at: new Date().toISOString() }
+            ? { 
+                ...propertyData, 
+                id: p.id, 
+                created_at: p.created_at, 
+                updated_at: new Date().toISOString(),
+                authorizedServices: propertyData.authorizedServices || [],
+                accessInformation: {
+                  code: propertyData.accessInformation?.code || '',
+                  additionalInfo: propertyData.accessInformation?.additionalInfo || ''
+                }
+              }
             : p
         ));
       } else {
         // Create new property
         const { data, error } = await supabase
           .from('properties')
-          .insert([propertyData])
+          .insert([{
+            ...propertyData,
+            authorizedServices: propertyData.authorizedServices || [],
+            accessInformation: {
+              code: propertyData.accessInformation?.code || '',
+              additionalInfo: propertyData.accessInformation?.additionalInfo || ''
+            }
+          }])
           .select();
 
         if (error) throw error;
@@ -151,7 +186,7 @@ export default function Properties() {
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Authorized Delivery Services</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {property.authorizedServices.map((service) => (
+                  {(property.authorizedServices || []).map((service) => (
                     <span
                       key={service}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -165,8 +200,8 @@ export default function Properties() {
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Access Information</h3>
                 <p className="mt-1 text-sm text-gray-600">
-                  Code: {property.accessInformation.code}
-                  {property.accessInformation.additionalInfo && (
+                  Code: {property.accessInformation?.code || ''}
+                  {property.accessInformation?.additionalInfo && (
                     <span className="block mt-1">{property.accessInformation.additionalInfo}</span>
                   )}
                 </p>
