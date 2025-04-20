@@ -24,14 +24,20 @@ export default function Properties() {
 
       if (error) throw error;
       
-      // Ensure authorizedServices is always an array
+      // Ensure data matches the Property interface
       const formattedData = (data || []).map(property => ({
-        ...property,
-        authorizedServices: property.authorizedServices || [],
+        id: property.id,
+        name: property.name || '',
+        address: property.address || '',
+        deliveryInstructions: property.delivery_instructions || '',
+        propertyUpdates: property.property_updates || '',
+        authorizedServices: Array.isArray(property.authorized_services) ? property.authorized_services : [],
         accessInformation: {
-          code: property.accessInformation?.code || '',
-          additionalInfo: property.accessInformation?.additionalInfo || ''
-        }
+          code: property.access_code || '',
+          additionalInfo: property.access_additional_info || ''
+        },
+        created_at: property.created_at,
+        updated_at: property.updated_at
       }));
       
       setProperties(formattedData);
@@ -70,18 +76,22 @@ export default function Properties() {
 
   const handleSave = async (propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Convert the data to match the database schema
+      const dbData = {
+        name: propertyData.name,
+        address: propertyData.address,
+        delivery_instructions: propertyData.deliveryInstructions,
+        property_updates: propertyData.propertyUpdates,
+        authorized_services: propertyData.authorizedServices,
+        access_code: propertyData.accessInformation.code,
+        access_additional_info: propertyData.accessInformation.additionalInfo
+      };
+
       if (selectedProperty) {
         // Update existing property
         const { error } = await supabase
           .from('properties')
-          .update({
-            ...propertyData,
-            authorizedServices: propertyData.authorizedServices || [],
-            accessInformation: {
-              code: propertyData.accessInformation?.code || '',
-              additionalInfo: propertyData.accessInformation?.additionalInfo || ''
-            }
-          })
+          .update(dbData)
           .eq('id', selectedProperty.id);
 
         if (error) throw error;
@@ -92,12 +102,7 @@ export default function Properties() {
                 ...propertyData, 
                 id: p.id, 
                 created_at: p.created_at, 
-                updated_at: new Date().toISOString(),
-                authorizedServices: propertyData.authorizedServices || [],
-                accessInformation: {
-                  code: propertyData.accessInformation?.code || '',
-                  additionalInfo: propertyData.accessInformation?.additionalInfo || ''
-                }
+                updated_at: new Date().toISOString()
               }
             : p
         ));
@@ -105,25 +110,33 @@ export default function Properties() {
         // Create new property
         const { data, error } = await supabase
           .from('properties')
-          .insert([{
-            ...propertyData,
-            authorizedServices: propertyData.authorizedServices || [],
-            accessInformation: {
-              code: propertyData.accessInformation?.code || '',
-              additionalInfo: propertyData.accessInformation?.additionalInfo || ''
-            }
-          }])
+          .insert([dbData])
           .select();
 
         if (error) throw error;
         if (data) {
-          setProperties([data[0], ...properties]);
+          const newProperty: Property = {
+            id: data[0].id,
+            name: data[0].name || '',
+            address: data[0].address || '',
+            deliveryInstructions: data[0].delivery_instructions || '',
+            propertyUpdates: data[0].property_updates || '',
+            authorizedServices: Array.isArray(data[0].authorized_services) ? data[0].authorized_services : [],
+            accessInformation: {
+              code: data[0].access_code || '',
+              additionalInfo: data[0].access_additional_info || ''
+            },
+            created_at: data[0].created_at,
+            updated_at: data[0].updated_at
+          };
+          setProperties([newProperty, ...properties]);
         }
       }
 
       setIsModalOpen(false);
     } catch (error: any) {
       setError(error.message);
+      console.error('Error saving property:', error);
     }
   };
 
@@ -175,33 +188,36 @@ export default function Properties() {
             <div className="mt-4 space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Delivery Instructions</h3>
-                <p className="mt-1 text-sm text-gray-600">{property.deliveryInstructions}</p>
+                <p className="mt-1 text-sm text-gray-600">{property.deliveryInstructions || 'No delivery instructions provided'}</p>
               </div>
 
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Property Updates</h3>
-                <p className="mt-1 text-sm text-gray-600">{property.propertyUpdates}</p>
+                <p className="mt-1 text-sm text-gray-600">{property.propertyUpdates || 'No property updates'}</p>
               </div>
 
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Authorized Delivery Services</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(property.authorizedServices || []).map((service) => (
+                  {(property.authorizedServices || []).map((service, index) => (
                     <span
-                      key={service}
+                      key={`${service}-${index}`}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                     >
                       {service}
                     </span>
                   ))}
+                  {(!property.authorizedServices || property.authorizedServices.length === 0) && (
+                    <span className="text-sm text-gray-500">No authorized services</span>
+                  )}
                 </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Access Information</h3>
                 <p className="mt-1 text-sm text-gray-600">
-                  Code: {property.accessInformation?.code || ''}
-                  {property.accessInformation?.additionalInfo && (
+                  Code: {property.accessInformation.code || 'No code provided'}
+                  {property.accessInformation.additionalInfo && (
                     <span className="block mt-1">{property.accessInformation.additionalInfo}</span>
                   )}
                 </p>
