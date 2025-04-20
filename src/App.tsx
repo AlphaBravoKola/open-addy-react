@@ -24,12 +24,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const { user } = useAuth();
+
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Landing />} />
+          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
           <Route
             path="/dashboard"
             element={
@@ -38,7 +40,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
         </Routes>
       </Router>
     </AuthProvider>
