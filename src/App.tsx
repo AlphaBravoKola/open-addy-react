@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Landing from './pages/Landing';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -19,7 +20,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <Layout>{children}</Layout>;
 }
 
 function App() {
@@ -27,14 +28,13 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <PrivateRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
+                <Dashboard />
               </PrivateRoute>
             }
           />

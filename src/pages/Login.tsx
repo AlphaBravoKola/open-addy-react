@@ -23,7 +23,7 @@ export default function Login() {
       if (error) throw error;
       
       if (data?.session) {
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       setError(error.message);
