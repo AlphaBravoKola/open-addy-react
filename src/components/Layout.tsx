@@ -14,7 +14,7 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Package Claims', href: '/package-claims', icon: CubeIcon },
   { name: 'Notify', href: '/notify', icon: BellIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },

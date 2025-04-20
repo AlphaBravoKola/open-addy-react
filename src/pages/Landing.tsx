@@ -7,9 +7,15 @@ export default function Landing() {
       <div className="relative isolate overflow-hidden bg-white">
         <div className="mx-auto max-w-7xl px-6 pb-24 pt-10 sm:pb-32 lg:flex lg:px-8 lg:py-40">
           <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl lg:flex-shrink-0 lg:pt-8">
-            <h1 className="mt-10 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Welcome to OpenAddy
-            </h1>
+            {/* Logo */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-16 h-16 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-2xl font-bold">OA</span>
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+                OpenAddy
+              </h1>
+            </div>
             <p className="mt-6 text-lg leading-8 text-gray-600">
               Your all-in-one solution for managing package deliveries and property communications. 
               Streamline your delivery process and keep your tenants informed.
