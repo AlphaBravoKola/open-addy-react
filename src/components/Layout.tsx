@@ -5,6 +5,7 @@ import {
   CubeIcon, 
   BellIcon, 
   Cog6ToothIcon,
+  BuildingOfficeIcon,
   Bars3Icon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
@@ -15,6 +16,7 @@ interface LayoutProps {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Properties', href: '/properties', icon: BuildingOfficeIcon },
   { name: 'Package Claims', href: '/package-claims', icon: CubeIcon },
   { name: 'Notify', href: '/notify', icon: BellIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },

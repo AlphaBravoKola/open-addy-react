@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import PackageClaims from './pages/PackageClaims';
+import Properties from './pages/Properties';
 import Notify from './pages/Notify';
 import Settings from './pages/Settings';
 
@@ -38,6 +39,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/properties"
+            element={
+              <PrivateRoute>
+                <Properties />
               </PrivateRoute>
             }
           />
