@@ -22,14 +22,32 @@ export default function Properties() {
       if (!user) throw new Error('Not authenticated');
 
       // Get the landlord record
-      const { data: landlordData, error: landlordError } = await supabase
+      let landlordData: { id: string } | null = null;
+      const { data: existingLandlord, error: landlordError } = await supabase
         .from('landlords')
         .select('id')
-        .eq('id', user.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (landlordError) throw landlordError;
-      if (!landlordData) throw new Error('Landlord record not found');
+      
+      if (!existingLandlord) {
+        // Create a new landlord record if one doesn't exist
+        const { data: newLandlord, error: createError } = await supabase
+          .from('landlords')
+          .insert([{ user_id: user.id }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        if (!newLandlord) throw new Error('Failed to create landlord record');
+        
+        landlordData = newLandlord;
+      } else {
+        landlordData = existingLandlord;
+      }
+
+      if (!landlordData) throw new Error('Failed to get or create landlord record');
 
       // Get properties with their instructions
       const { data, error } = await supabase
@@ -104,14 +122,32 @@ export default function Properties() {
       if (!user) throw new Error('Not authenticated');
 
       // Get the landlord record
-      const { data: landlordData, error: landlordError } = await supabase
+      let landlordData: { id: string } | null = null;
+      const { data: existingLandlord, error: landlordError } = await supabase
         .from('landlords')
         .select('id')
-        .eq('id', user.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (landlordError) throw landlordError;
-      if (!landlordData) throw new Error('Landlord record not found');
+      
+      if (!existingLandlord) {
+        // Create a new landlord record if one doesn't exist
+        const { data: newLandlord, error: createError } = await supabase
+          .from('landlords')
+          .insert([{ user_id: user.id }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        if (!newLandlord) throw new Error('Failed to create landlord record');
+        
+        landlordData = newLandlord;
+      } else {
+        landlordData = existingLandlord;
+      }
+
+      if (!landlordData) throw new Error('Failed to get or create landlord record');
 
       const { instructions, ...propertyFields } = propertyData;
       
