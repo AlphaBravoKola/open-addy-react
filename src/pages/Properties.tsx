@@ -35,7 +35,11 @@ export default function Properties() {
         // Create a new landlord record if one doesn't exist
         const { data: newLandlord, error: createError } = await supabase
           .from('landlords')
-          .insert([{ id: user.id }])
+          .insert([{ 
+            id: user.id,
+            email: user.email,
+            created_at: new Date().toISOString()
+          }])
           .select()
           .single();
 
@@ -135,7 +139,11 @@ export default function Properties() {
         // Create a new landlord record if one doesn't exist
         const { data: newLandlord, error: createError } = await supabase
           .from('landlords')
-          .insert([{ id: user.id }])
+          .insert([{ 
+            id: user.id,
+            email: user.email,
+            created_at: new Date().toISOString()
+          }])
           .select()
           .single();
 
