@@ -21,10 +21,19 @@ export default function Properties() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Simple query to get properties for this landlord
+      // Get properties with their instructions
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select(`
+          *,
+          property_instructions (
+            id,
+            package_location,
+            access_code,
+            access_notes,
+            special_instructions
+          )
+        `)
         .eq('landlord_id', user.id);
 
       if (error) throw error;
@@ -38,6 +47,7 @@ export default function Properties() {
         unit_count: property.unit_count,
         property_type: property.property_type,
         authorized_services: Array.isArray(property.authorized_services) ? property.authorized_services : [],
+        instructions: property.property_instructions?.[0] || null,
         created_at: property.created_at,
         updated_at: property.updated_at
       }));
