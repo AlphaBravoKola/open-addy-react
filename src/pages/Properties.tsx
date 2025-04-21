@@ -34,10 +34,7 @@ export default function Properties() {
       // Get properties with their instructions
       const { data, error } = await supabase
         .from('properties')
-        .select(\`
-          *,
-          instructions:property_instructions(*)
-        \`)
+        .select('*, instructions:property_instructions(*)')
         .eq('landlord_id', landlordData.id)
         .order('created_at', { ascending: false });
 
