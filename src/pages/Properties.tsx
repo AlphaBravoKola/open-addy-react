@@ -17,70 +17,51 @@ export default function Properties() {
 
   const fetchProperties = async () => {
     try {
-      // First get the user's landlord ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Get the landlord record
-      let landlordData: { id: string } | null = null;
-      const { data: existingLandlord, error: landlordError } = await supabase
-        .from('landlords')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (landlordError) throw landlordError;
-      
-      if (!existingLandlord) {
-        // Create a new landlord record if one doesn't exist
-        const { data: newLandlord, error: createError } = await supabase
-          .from('landlords')
-          .insert([{ 
-            id: user.id,
-            email: user.email,
-            created_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        if (!newLandlord) throw new Error('Failed to create landlord record');
-        
-        landlordData = newLandlord;
-      } else {
-        landlordData = existingLandlord;
-      }
-
-      if (!landlordData) throw new Error('Failed to get or create landlord record');
-
-      // Get properties with their instructions
-      const { data, error } = await supabase
+      const { data: properties, error: propertiesError } = await supabase
         .from('properties')
-        .select('*, instructions:property_instructions(*)')
-        .eq('landlord_id', landlordData.id)
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          landlords (
+            id,
+            first_name,
+            last_name,
+            phone_number,
+            company_name,
+            business_address,
+            tax_id,
+            verification_status
+          ),
+          property_instructions (
+            package_location,
+            access_code,
+            access_notes,
+            special_instructions
+          )
+        `);
 
-      if (error) throw error;
-      
-      // Format the data
-      const formattedData = (data || []).map(property => ({
-        id: property.id,
-        landlord_id: property.landlord_id,
-        name: property.name || '',
-        address: property.address || '',
-        unit_count: property.unit_count,
-        property_type: property.property_type,
-        authorized_services: Array.isArray(property.authorized_services) ? property.authorized_services : [],
-        instructions: property.instructions?.[0],
-        created_at: property.created_at,
-        updated_at: property.updated_at
-      }));
-      
-      setProperties(formattedData);
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
+      if (propertiesError) throw propertiesError;
+
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', properties.map(p => p.landlord_id));
+
+      if (usersError) throw usersError;
+
+      const propertiesWithLandlordEmail = properties.map(property => {
+        const landlordUser = users.find(u => u.id === property.landlord_id);
+        return {
+          ...property,
+          landlord: {
+            ...property.landlords,
+            email: landlordUser?.email || ''
+          }
+        };
+      });
+
+      setProperties(propertiesWithLandlordEmail);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
     }
   };
 
