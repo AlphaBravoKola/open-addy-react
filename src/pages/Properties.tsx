@@ -3,6 +3,7 @@ import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Property, PropertyInstructions } from '../types';
 import { supabase } from '../utils/supabaseClient';
 import PropertyModal from '../components/PropertyModal';
+import DeliveryServiceIcon from '../components/DeliveryServiceIcon';
 
 export default function Properties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -316,12 +317,7 @@ export default function Properties() {
                 <h3 className="text-sm font-medium text-gray-900">Authorized Delivery Services</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {(property.authorized_services || []).map((service, index) => (
-                    <span
-                      key={`${service}-${index}`}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      {service}
-                    </span>
+                    <DeliveryServiceIcon key={`${service}-${index}`} service={service} />
                   ))}
                   {(!property.authorized_services || property.authorized_services.length === 0) && (
                     <span className="text-sm text-gray-500">No authorized services</span>
