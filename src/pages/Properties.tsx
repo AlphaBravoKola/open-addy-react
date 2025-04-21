@@ -26,7 +26,7 @@ export default function Properties() {
       const { data: existingLandlord, error: landlordError } = await supabase
         .from('landlords')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (landlordError) throw landlordError;
@@ -35,7 +35,7 @@ export default function Properties() {
         // Create a new landlord record if one doesn't exist
         const { data: newLandlord, error: createError } = await supabase
           .from('landlords')
-          .insert([{ user_id: user.id }])
+          .insert([{ id: user.id }])
           .select()
           .single();
 
@@ -126,7 +126,7 @@ export default function Properties() {
       const { data: existingLandlord, error: landlordError } = await supabase
         .from('landlords')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (landlordError) throw landlordError;
@@ -135,7 +135,7 @@ export default function Properties() {
         // Create a new landlord record if one doesn't exist
         const { data: newLandlord, error: createError } = await supabase
           .from('landlords')
-          .insert([{ user_id: user.id }])
+          .insert([{ id: user.id }])
           .select()
           .single();
 
