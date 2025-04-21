@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Property } from '../types';
+import { Property, PropertyInstructions } from '../types';
 import { supabase } from '../utils/supabaseClient';
 import PropertyModal from '../components/PropertyModal';
 
@@ -17,25 +17,42 @@ export default function Properties() {
 
   const fetchProperties = async () => {
     try {
+      // First get the user's landlord ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get the landlord record
+      const { data: landlordData, error: landlordError } = await supabase
+        .from('landlords')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (landlordError) throw landlordError;
+      if (!landlordData) throw new Error('Landlord record not found');
+
+      // Get properties with their instructions
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select(\`
+          *,
+          instructions:property_instructions(*)
+        \`)
+        .eq('landlord_id', landlordData.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Ensure data matches the Property interface
+      // Format the data
       const formattedData = (data || []).map(property => ({
         id: property.id,
+        landlord_id: property.landlord_id,
         name: property.name || '',
         address: property.address || '',
-        deliveryInstructions: property.delivery_instructions || '',
-        propertyUpdates: property.property_updates || '',
-        authorizedServices: Array.isArray(property.authorized_services) ? property.authorized_services : [],
-        accessInformation: {
-          code: property.access_code || '',
-          additionalInfo: property.access_info || ''
-        },
+        unit_count: property.unit_count,
+        property_type: property.property_type,
+        authorized_services: Array.isArray(property.authorized_services) ? property.authorized_services : [],
+        instructions: property.instructions?.[0],
         created_at: property.created_at,
         updated_at: property.updated_at
       }));
@@ -52,6 +69,15 @@ export default function Properties() {
     if (!window.confirm('Are you sure you want to delete this property?')) return;
 
     try {
+      // First delete the instructions
+      const { error: instructionsError } = await supabase
+        .from('property_instructions')
+        .delete()
+        .eq('property_id', id);
+
+      if (instructionsError) throw instructionsError;
+
+      // Then delete the property
       const { error } = await supabase
         .from('properties')
         .delete()
@@ -74,63 +100,106 @@ export default function Properties() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleSave = async (propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'landlord_id'>) => {
     try {
-      // Convert the data to match the database schema
-      const dbData = {
-        name: propertyData.name,
-        address: propertyData.address,
-        delivery_instructions: propertyData.deliveryInstructions,
-        property_updates: propertyData.propertyUpdates,
-        authorized_services: propertyData.authorizedServices,
-        access_code: propertyData.accessInformation.code,
-        access_info: propertyData.accessInformation.additionalInfo
-      };
+      // Get the user's landlord ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
+      // Get the landlord record
+      const { data: landlordData, error: landlordError } = await supabase
+        .from('landlords')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (landlordError) throw landlordError;
+      if (!landlordData) throw new Error('Landlord record not found');
+
+      const { instructions, ...propertyFields } = propertyData;
+      
       if (selectedProperty) {
         // Update existing property
-        const { error } = await supabase
+        const { error: propertyError } = await supabase
           .from('properties')
-          .update(dbData)
+          .update({
+            name: propertyFields.name,
+            address: propertyFields.address,
+            unit_count: propertyFields.unit_count,
+            property_type: propertyFields.property_type,
+            authorized_services: propertyFields.authorized_services
+          })
           .eq('id', selectedProperty.id);
 
-        if (error) throw error;
+        if (propertyError) throw propertyError;
 
-        setProperties(properties.map(p => 
-          p.id === selectedProperty.id 
-            ? { 
-                ...propertyData, 
-                id: p.id, 
-                created_at: p.created_at, 
-                updated_at: new Date().toISOString()
-              }
-            : p
-        ));
+        // Update or create instructions
+        if (instructions) {
+          if (selectedProperty.instructions?.id) {
+            // Update existing instructions
+            const { error: instructionsError } = await supabase
+              .from('property_instructions')
+              .update({
+                package_location: instructions.package_location,
+                access_code: instructions.access_code,
+                access_notes: instructions.access_notes,
+                special_instructions: instructions.special_instructions
+              })
+              .eq('id', selectedProperty.instructions.id);
+
+            if (instructionsError) throw instructionsError;
+          } else {
+            // Create new instructions
+            const { error: instructionsError } = await supabase
+              .from('property_instructions')
+              .insert([{
+                property_id: selectedProperty.id,
+                package_location: instructions.package_location,
+                access_code: instructions.access_code,
+                access_notes: instructions.access_notes,
+                special_instructions: instructions.special_instructions
+              }]);
+
+            if (instructionsError) throw instructionsError;
+          }
+        }
+
+        // Refresh the properties list
+        fetchProperties();
       } else {
         // Create new property
-        const { data, error } = await supabase
+        const { data: newProperty, error: propertyError } = await supabase
           .from('properties')
-          .insert([dbData])
-          .select();
+          .insert([{
+            landlord_id: landlordData.id,
+            name: propertyFields.name,
+            address: propertyFields.address,
+            unit_count: propertyFields.unit_count,
+            property_type: propertyFields.property_type,
+            authorized_services: propertyFields.authorized_services
+          }])
+          .select()
+          .single();
 
-        if (error) throw error;
-        if (data) {
-          const newProperty: Property = {
-            id: data[0].id,
-            name: data[0].name || '',
-            address: data[0].address || '',
-            deliveryInstructions: data[0].delivery_instructions || '',
-            propertyUpdates: data[0].property_updates || '',
-            authorizedServices: Array.isArray(data[0].authorized_services) ? data[0].authorized_services : [],
-            accessInformation: {
-              code: data[0].access_code || '',
-              additionalInfo: data[0].access_info || ''
-            },
-            created_at: data[0].created_at,
-            updated_at: data[0].updated_at
-          };
-          setProperties([newProperty, ...properties]);
+        if (propertyError) throw propertyError;
+
+        // Create instructions if provided
+        if (instructions && newProperty) {
+          const { error: instructionsError } = await supabase
+            .from('property_instructions')
+            .insert([{
+              property_id: newProperty.id,
+              package_location: instructions.package_location,
+              access_code: instructions.access_code,
+              access_notes: instructions.access_notes,
+              special_instructions: instructions.special_instructions
+            }]);
+
+          if (instructionsError) throw instructionsError;
         }
+
+        // Refresh the properties list
+        fetchProperties();
       }
 
       setIsModalOpen(false);
@@ -168,6 +237,12 @@ export default function Properties() {
               <div>
                 <h2 className="text-xl font-medium text-gray-900">{property.name}</h2>
                 <p className="text-gray-500">{property.address}</p>
+                {property.unit_count && (
+                  <p className="text-sm text-gray-500 mt-1">Units: {property.unit_count}</p>
+                )}
+                {property.property_type && (
+                  <p className="text-sm text-gray-500">Type: {property.property_type}</p>
+                )}
               </div>
               <div className="flex space-x-2">
                 <button 
@@ -186,20 +261,43 @@ export default function Properties() {
             </div>
 
             <div className="mt-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Delivery Instructions</h3>
-                <p className="mt-1 text-sm text-gray-600">{property.deliveryInstructions || 'No delivery instructions provided'}</p>
-              </div>
+              {property.instructions && (
+                <>
+                  {property.instructions.package_location && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Package Location</h3>
+                      <p className="mt-1 text-sm text-gray-600">{property.instructions.package_location}</p>
+                    </div>
+                  )}
 
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Property Updates</h3>
-                <p className="mt-1 text-sm text-gray-600">{property.propertyUpdates || 'No property updates'}</p>
-              </div>
+                  {property.instructions.special_instructions && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Special Instructions</h3>
+                      <p className="mt-1 text-sm text-gray-600">{property.instructions.special_instructions}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">Access Information</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {property.instructions.access_code && (
+                        <span className="block">Code: {property.instructions.access_code}</span>
+                      )}
+                      {property.instructions.access_notes && (
+                        <span className="block mt-1">{property.instructions.access_notes}</span>
+                      )}
+                      {!property.instructions.access_code && !property.instructions.access_notes && (
+                        <span className="text-gray-500">No access information provided</span>
+                      )}
+                    </p>
+                  </div>
+                </>
+              )}
 
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Authorized Delivery Services</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(property.authorizedServices || []).map((service, index) => (
+                  {(property.authorized_services || []).map((service, index) => (
                     <span
                       key={`${service}-${index}`}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -207,20 +305,10 @@ export default function Properties() {
                       {service}
                     </span>
                   ))}
-                  {(!property.authorizedServices || property.authorizedServices.length === 0) && (
+                  {(!property.authorized_services || property.authorized_services.length === 0) && (
                     <span className="text-sm text-gray-500">No authorized services</span>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Access Information</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Code: {property.accessInformation.code || 'No code provided'}
-                  {property.accessInformation.additionalInfo && (
-                    <span className="block mt-1">{property.accessInformation.additionalInfo}</span>
-                  )}
-                </p>
               </div>
             </div>
           </div>
