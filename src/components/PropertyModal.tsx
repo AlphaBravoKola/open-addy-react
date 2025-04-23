@@ -1,9 +1,23 @@
-import { Fragment, useState, useEffect } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Property, PropertyInstructions } from '../types';
 
-const DELIVERY_SERVICES = ['DHL', 'UPS', 'USPS', 'FedEx', 'Amazon'];
+interface FormData {
+  name: string;
+  address: string;
+  unit_count: string | number;
+  property_type: string;
+  authorized_services: string[];
+  instructions: {
+    package_location: string;
+    access_code: string;
+    access_notes: string;
+    special_instructions: string;
+  };
+}
+
+const DELIVERY_SERVICES = ['UPS', 'USPS', 'FedEx', 'Amazon', 'DHL'];
 
 interface PropertyModalProps {
   isOpen: boolean;
@@ -13,60 +27,70 @@ interface PropertyModalProps {
 }
 
 export default function PropertyModal({ isOpen, onClose, onSave, property }: PropertyModalProps) {
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [unitCount, setUnitCount] = useState<number | undefined>();
-  const [propertyType, setPropertyType] = useState('');
-  const [authorizedServices, setAuthorizedServices] = useState<string[]>([]);
-  const [packageLocation, setPackageLocation] = useState('');
-  const [accessCode, setAccessCode] = useState('');
-  const [accessNotes, setAccessNotes] = useState('');
-  const [specialInstructions, setSpecialInstructions] = useState('');
+  const [formData, setFormData] = useState<FormData>({
+    name: property?.name || '',
+    address: property?.address || '',
+    unit_count: property?.unit_count || '',
+    property_type: property?.property_type || '',
+    authorized_services: property?.authorized_services || [],
+    instructions: {
+      package_location: property?.instructions?.package_location || '',
+      access_code: property?.instructions?.access_code || '',
+      access_notes: property?.instructions?.access_notes || '',
+      special_instructions: property?.instructions?.special_instructions || ''
+    }
+  });
 
   useEffect(() => {
     if (property) {
-      setName(property.name);
-      setAddress(property.address);
-      setUnitCount(property.unit_count);
-      setPropertyType(property.property_type || '');
-      setAuthorizedServices(property.authorized_services || []);
-      if (property.instructions) {
-        setPackageLocation(property.instructions.package_location || '');
-        setAccessCode(property.instructions.access_code || '');
-        setAccessNotes(property.instructions.access_notes || '');
-        setSpecialInstructions(property.instructions.special_instructions || '');
-      }
+      setFormData({
+        name: property.name || '',
+        address: property.address || '',
+        unit_count: property.unit_count?.toString() || '',
+        property_type: property.property_type || '',
+        authorized_services: property.authorized_services || [],
+        instructions: {
+          package_location: property.instructions?.package_location || '',
+          access_code: property.instructions?.access_code || '',
+          access_notes: property.instructions?.access_notes || '',
+          special_instructions: property.instructions?.special_instructions || ''
+        }
+      });
     } else {
       resetForm();
     }
   }, [property]);
 
   const resetForm = () => {
-    setName('');
-    setAddress('');
-    setUnitCount(undefined);
-    setPropertyType('');
-    setAuthorizedServices([]);
-    setPackageLocation('');
-    setAccessCode('');
-    setAccessNotes('');
-    setSpecialInstructions('');
+    setFormData({
+      name: '',
+      address: '',
+      unit_count: '',
+      property_type: '',
+      authorized_services: [],
+      instructions: {
+        package_location: '',
+        access_code: '',
+        access_notes: '',
+        special_instructions: ''
+      }
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'landlord_id'> = {
-      name,
-      address,
-      unit_count: unitCount,
-      property_type: propertyType || undefined,
-      authorized_services: authorizedServices,
+      name: formData.name,
+      address: formData.address,
+      unit_count: formData.unit_count ? Number(formData.unit_count) : undefined,
+      property_type: formData.property_type || undefined,
+      authorized_services: formData.authorized_services,
       instructions: {
-        package_location: packageLocation || undefined,
-        access_code: accessCode || undefined,
-        access_notes: accessNotes || undefined,
-        special_instructions: specialInstructions || undefined
+        package_location: formData.instructions.package_location || undefined,
+        access_code: formData.instructions.access_code || undefined,
+        access_notes: formData.instructions.access_notes || undefined,
+        special_instructions: formData.instructions.special_instructions || undefined
       }
     };
 
@@ -75,9 +99,12 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
   };
 
   const toggleService = (service: string) => {
-    setAuthorizedServices(prev => prev.includes(service)
-      ? prev.filter(s => s !== service)
-      : [...prev, service]);
+    setFormData(prev => ({
+      ...prev,
+      authorized_services: prev.authorized_services.includes(service)
+        ? prev.authorized_services.filter(s => s !== service)
+        : [...prev.authorized_services, service]
+    }));
   };
 
   if (!isOpen) return null;
@@ -99,8 +126,8 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 <input
                   type="text"
                   id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -113,8 +140,8 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 <input
                   type="text"
                   id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  value={formData.address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -127,8 +154,8 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 <input
                   type="number"
                   id="unitCount"
-                  value={unitCount || ''}
-                  onChange={(e) => setUnitCount(e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={formData.unit_count}
+                  onChange={(e) => setFormData(prev => ({ ...prev, unit_count: e.target.value }))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
@@ -139,8 +166,8 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 </label>
                 <select
                   id="propertyType"
-                  value={propertyType}
-                  onChange={(e) => setPropertyType(e.target.value)}
+                  value={formData.property_type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, property_type: e.target.value }))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="">Select type</option>
@@ -152,27 +179,24 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
               </div>
             </div>
 
-            <div>
+            <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700">
                 Authorized Delivery Services
               </label>
-              <div className="mt-2 space-y-2">
-                {DELIVERY_SERVICES.map((service) => (
-                  <label key={service} className="inline-flex items-center mr-4">
-                    <input
-                      type="checkbox"
-                      checked={authorizedServices.includes(service)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          toggleService(service);
-                        } else {
-                          toggleService(service);
-                        }
-                      }}
-                      className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <span className="ml-2">{service}</span>
-                  </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {DELIVERY_SERVICES.map(service => (
+                  <button
+                    key={service}
+                    type="button"
+                    onClick={() => toggleService(service)}
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
+                      formData.authorized_services.includes(service)
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {service}
+                  </button>
                 ))}
               </div>
             </div>
@@ -187,8 +211,11 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 <input
                   type="text"
                   id="packageLocation"
-                  value={packageLocation}
-                  onChange={(e) => setPackageLocation(e.target.value)}
+                  value={formData.instructions.package_location}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    instructions: { ...prev.instructions, package_location: e.target.value } }
+                  ))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="e.g., Front porch, Mailroom, etc."
                 />
@@ -201,8 +228,11 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 <input
                   type="text"
                   id="accessCode"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
+                  value={formData.instructions.access_code}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    instructions: { ...prev.instructions, access_code: e.target.value } }
+                  ))}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="e.g., Gate code, Door code, etc."
                 />
@@ -214,8 +244,11 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 </label>
                 <textarea
                   id="accessNotes"
-                  value={accessNotes}
-                  onChange={(e) => setAccessNotes(e.target.value)}
+                  value={formData.instructions.access_notes}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    instructions: { ...prev.instructions, access_notes: e.target.value } }
+                  ))}
                   rows={3}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Additional access information"
@@ -228,8 +261,11 @@ export default function PropertyModal({ isOpen, onClose, onSave, property }: Pro
                 </label>
                 <textarea
                   id="specialInstructions"
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  value={formData.instructions.special_instructions}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    instructions: { ...prev.instructions, special_instructions: e.target.value } }
+                  ))}
                   rows={3}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Any special delivery instructions"

@@ -119,7 +119,6 @@ export default function Properties() {
           .from('landlords')
           .insert([{ 
             id: user.id,
-            email: user.email,
             created_at: new Date().toISOString()
           }])
           .select()
@@ -146,7 +145,7 @@ export default function Properties() {
             address: propertyFields.address,
             unit_count: propertyFields.unit_count,
             property_type: propertyFields.property_type,
-            authorized_services: propertyFields.authorized_services
+            authorized_services: propertyFields.authorized_services || []
           })
           .eq('id', selectedProperty.id);
 
@@ -182,9 +181,6 @@ export default function Properties() {
             if (instructionsError) throw instructionsError;
           }
         }
-
-        // Refresh the properties list
-        fetchProperties();
       } else {
         // Create new property
         const { data: newProperty, error: propertyError } = await supabase
@@ -195,7 +191,7 @@ export default function Properties() {
             address: propertyFields.address,
             unit_count: propertyFields.unit_count,
             property_type: propertyFields.property_type,
-            authorized_services: propertyFields.authorized_services
+            authorized_services: propertyFields.authorized_services || []
           }])
           .select()
           .single();
@@ -216,15 +212,14 @@ export default function Properties() {
 
           if (instructionsError) throw instructionsError;
         }
-
-        // Refresh the properties list
-        fetchProperties();
       }
 
+      // Refresh the properties list
+      await fetchProperties();
       setIsModalOpen(false);
     } catch (error: any) {
-      setError(error.message);
       console.error('Error saving property:', error);
+      setError(error.message);
     }
   };
 
