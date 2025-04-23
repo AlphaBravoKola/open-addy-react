@@ -104,35 +104,29 @@ export default function Properties() {
       if (!user) throw new Error('Not authenticated');
 
       // Get the landlord record
-      let landlordData: { id: string } | null = null;
-      const { data: existingLandlord, error: landlordError } = await supabase
+      const { data: landlord, error: landlordError } = await supabase
         .from('landlords')
         .select('id')
         .eq('id', user.id)
-        .maybeSingle();
+        .single();
 
-      if (landlordError) throw landlordError;
-      
-      if (!existingLandlord) {
-        // Create a new landlord record if one doesn't exist
+      if (landlordError && landlordError.code !== 'PGRST116') {
+        // If it's not a "not found" error, throw it
+        throw landlordError;
+      }
+
+      let landlordId = landlord?.id;
+
+      if (!landlordId) {
+        // Create a new landlord record using RPC
         const { data: newLandlord, error: createError } = await supabase
-          .from('landlords')
-          .insert([{ 
-            id: user.id,
-            created_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
+          .rpc('create_landlord_for_user');
 
         if (createError) throw createError;
         if (!newLandlord) throw new Error('Failed to create landlord record');
         
-        landlordData = newLandlord;
-      } else {
-        landlordData = existingLandlord;
+        landlordId = user.id;
       }
-
-      if (!landlordData) throw new Error('Failed to get or create landlord record');
 
       const { instructions, ...propertyFields } = propertyData;
       
@@ -147,7 +141,8 @@ export default function Properties() {
             property_type: propertyFields.property_type,
             authorized_services: propertyFields.authorized_services || []
           })
-          .eq('id', selectedProperty.id);
+          .eq('id', selectedProperty.id)
+          .eq('landlord_id', landlordId); // Add this to ensure RLS policy is satisfied
 
         if (propertyError) throw propertyError;
 
@@ -186,7 +181,7 @@ export default function Properties() {
         const { data: newProperty, error: propertyError } = await supabase
           .from('properties')
           .insert([{
-            landlord_id: landlordData.id,
+            landlord_id: landlordId,
             name: propertyFields.name,
             address: propertyFields.address,
             unit_count: propertyFields.unit_count,
